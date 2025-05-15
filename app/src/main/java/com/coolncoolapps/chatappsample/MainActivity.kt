@@ -3,45 +3,32 @@ package com.coolncoolapps.chatappsample
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.coolncoolapps.chatappsample.ui.theme.ChatAppSampleTheme
+import androidx.room.Room
+import com.coolncoolapps.chatappsample.data.api.ChatApiService
+import com.coolncoolapps.chatappsample.domain.repository.ChatRepositoryImpl
+import com.coolncoolapps.chatappsample.presentation.ui.ChatAppNavHost
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        val db = Room.databaseBuilder(
+            applicationContext,
+            ChatDatabase::class.java, "chat-db"
+        ).build()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://your.api.server/") // replace with your server
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val api = retrofit.create(ChatApiService::class.java)
+        val repository = ChatRepositoryImpl(api, db.chatDao())
+
         setContent {
-            ChatAppSampleTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            ChatAppNavHost(repository)
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    ChatAppSampleTheme {
-        Greeting("Android")
     }
 }
